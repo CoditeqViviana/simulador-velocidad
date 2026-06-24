@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Velocidad · Coditeq</title>
+<meta name="description" content="Simulador interno de la línea de etiquetas Coditeq: ajusta velocidad, eficiencia y horas para proyectar metros lineales, m² y facturación.">
+<meta property="og:title" content="Simulador de Velocidad y Facturación · Coditeq">
+<meta property="og:description" content="Proyecta metros lineales, m² y facturación ajustando velocidad por máquina, eficiencia y tiempo de operación.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d1b2a'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Arial,sans-serif' font-weight='bold' fill='%23e07a3f' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#0d1b2a; --ink2:#1b263b; --paper:#f7f4ee; --card:#ffffff;
+  --line:#d8d2c4; --muted:#6b7280; --accent:#e07a3f; --accent2:#1d6f6f;
+  --good:#1d6f6f; --bad:#b5482b; --chip:#eef0ee;
+  --shadow:0 1px 3px rgba(13,27,42,.07),0 8px 24px rgba(13,27,42,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--paper);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px}
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+.brand{font-weight:800;letter-spacing:-.02em;font-size:13px;text-transform:uppercase;color:var(--accent)}
+h1{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-top:2px}
+.sub{color:var(--muted);font-size:13.5px;max-width:620px;margin-top:6px}
+.yearpick{display:flex;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;font-size:13px}
+.yearpick button{border:0;background:var(--card);padding:8px 14px;cursor:pointer;font-weight:600;color:var(--muted)}
+.yearpick button.on{background:var(--ink);color:#fff}
+
+.grid{display:grid;grid-template-columns:330px 1fr;gap:22px;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.panel-h{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;font-size:14px;
+  display:flex;align-items:center;gap:8px}
+.panel-h .n{width:22px;height:22px;border-radius:6px;background:var(--ink);color:#fff;display:grid;
+  place-items:center;font-size:12px;font-weight:700}
+.panel-b{padding:16px 18px}
+
+label.fld{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin:14px 0 5px;
+  text-transform:uppercase;letter-spacing:.03em}
+label.fld:first-child{margin-top:0}
+.hint{font-size:11.5px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+select,input[type=number]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
+  font-size:15px;background:var(--paper);color:var(--ink);font-weight:600}
+input[type=number]:focus,select:focus{outline:2px solid var(--accent2);outline-offset:-1px;background:#fff}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.speedrow{display:flex;align-items:center;gap:10px;margin-top:4px}
+.speedrow input[type=range]{flex:1;accent-color:var(--accent)}
+.speedval{font-variant-numeric:tabular-nums;font-weight:800;font-size:17px;min-width:64px;text-align:right}
+.speedval small{font-size:11px;color:var(--muted);font-weight:600}
+
+.scn{display:flex;gap:8px;margin:6px 0 0}
+.scn .box{flex:1;border:1px dashed var(--line);border-radius:10px;padding:10px;text-align:center}
+.scn .box.b{border-color:var(--accent);background:#fcf3ec}
+.scn .box .lab{font-size:10.5px;text-transform:uppercase;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.scn .box .v{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.scn .arrow{align-self:center;color:var(--accent);font-weight:800;font-size:18px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:720px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.kpi.alt::before{background:var(--accent2)}
+.kpi.ml::before{background:var(--ink)}
+.kpi .lab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.kpi .big{font-size:25px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1}
+.kpi .delta{font-size:12.5px;font-weight:700;margin-top:7px;display:inline-flex;align-items:center;gap:4px}
+.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
+.kpi .base{font-size:11px;color:var(--muted);margin-top:3px}
+
+.tabs{display:flex;gap:4px;margin-bottom:0}
+.tabs button{border:1px solid var(--line);border-bottom:0;background:var(--chip);padding:10px 18px;
+  cursor:pointer;font-weight:700;font-size:13px;color:var(--muted);border-radius:10px 10px 0 0}
+.tabs button.on{background:var(--card);color:var(--ink)}
+.tabpanel{background:var(--card);border:1px solid var(--line);border-radius:0 14px 14px 14px;
+  box-shadow:var(--shadow);padding:18px;margin-bottom:22px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--ink)}
+tbody tr:last-child td{border-bottom:0}
+tr.tot td{font-weight:800;border-top:2px solid var(--ink);background:var(--paper)}
+.mch{font-weight:700}
+.pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}
+.barcell{position:relative}
+.bar{height:6px;border-radius:3px;background:var(--accent2);margin-top:4px;opacity:.85}
+
+.note{font-size:12px;color:var(--muted);margin-top:14px;padding:12px 14px;background:var(--paper);
+  border-radius:10px;border:1px solid var(--line)}
+.note b{color:var(--ink2)}
+.foot{margin-top:26px;font-size:11.5px;color:var(--muted);text-align:center}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  padding:2px 7px;border-radius:5px;background:var(--chip);color:var(--ink2);margin-left:6px}
+.save{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:9px;padding:9px 14px;
+  font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-top:16px}
+.save:hover{background:var(--ink2)}
+.savedlist{margin-top:14px}
+.savedlist .item{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;
+  padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--paper)}
+.savedlist .item b{font-variant-numeric:tabular-nums}
+.savedlist .x{cursor:pointer;color:var(--bad);font-weight:800;border:0;background:none;font-size:15px}
+.chartwrap{margin-top:6px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:4px 0 12px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.maqpick{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.maqpick label{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);
+  border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;background:var(--paper);
+  transition:border-color .12s,background .12s}
+.maqpick label:hover{border-color:var(--accent2)}
+.maqpick label.on{border-color:var(--accent);background:#fcf3ec}
+.maqpick input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex:none}
+.maqpick .tag{margin-left:auto}
+.maqquick{display:flex;gap:6px;margin:8px 0 2px}
+.maqquick button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:8px;
+  padding:6px 4px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.maqquick button:hover{border-color:var(--ink);color:var(--ink)}
+.scopewarn{font-size:11.5px;color:var(--bad);font-weight:600;margin-top:6px;display:none}
+
+.grouptabs{display:flex;gap:8px;margin:0 0 20px}
+.grouptabs button{flex:1;border:2px solid var(--line);background:var(--card);padding:13px 16px;
+  cursor:pointer;font-weight:800;font-size:15px;color:var(--muted);border-radius:12px;letter-spacing:-.01em;
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;transition:all .12s}
+.grouptabs button .gsub{font-size:11px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0}
+.grouptabs button.on{border-color:var(--accent);background:#fcf3ec;color:var(--ink)}
+.grouptabs button.on .gsub{color:var(--accent)}
+.maqspeed{margin-top:4px}
+.maqspeed .mrow{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--paper)}
+.maqspeed .mrow.off{opacity:.45}
+.maqspeed .mhead{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.maqspeed .mhead input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+.maqspeed .mhead .mname{font-weight:700;font-size:14px}
+.maqspeed .mhead .tag{margin-left:auto}
+.maqspeed .speeds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.maqspeed .sp{display:flex;flex-direction:column;gap:3px}
+.maqspeed .sp label{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+.maqspeed .sp input{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;font-weight:700;
+  background:#fff;font-variant-numeric:tabular-nums;width:100%}
+.maqspeed .sp input.vn{color:var(--accent);border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div>
+    <div class="brand">Coditeq · Línea Etiquetas</div>
+    <h1>Simulador de velocidad y facturación</h1>
+    <p class="sub">Ajusta velocidad, eficiencia y horas para ver cuántos m² produces y cuánto facturarías. Compara un escenario base contra uno nuevo, por máquina o para toda la planta.</p>
+  </div>
+  <div class="yearpick" id="yearpick">
+    <button data-y="2026" class="on">Base 2026</button>
+    <button data-y="2025">Base 2025</button>
+  </div>
+</header>
+<div class="grouptabs" id="grouptabs">
+  <button data-g="impresos" class="on">Impresos
+    <span class="gsub">4 impresoras · Impreso · Fondos · Impreso Simple</span></button>
+  <button data-g="blancos">Blancos
+    <span class="gsub">5 troqueladoras · Blanco · Blanco Zebra</span></button>
+</div>
+
+<div class="grid">
+  <!-- ===== CONTROLES ===== -->
+  <div>
+    <div class="panel">
+      <div class="panel-h"><span class="n">1</span> Velocidad por máquina</div>
+      <div class="panel-b">
+        <p class="hint" style="margin-bottom:10px">Marca las máquinas a simular y define la velocidad <b>base</b> y la <b>nueva</b> (en metros lineales/min) de cada una. Cada máquina puede ir a su propio ritmo.</p>
+        <div class="maqquick">
+          <button type="button" id="qAll">Todas</button>
+          <button type="button" id="qNone">Ninguna</button>
+        </div>
+        <div class="maqspeed" id="maqspeed"></div>
+        <div class="scopewarn" id="scopewarn">Selecciona al menos una máquina.</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="panel-h"><span class="n">2</span> Tiempo de operación</div>
+      <div class="panel-b">
+        <label class="fld">Eficiencia <span class="hint">% de tiempo productivo real</span></label>
+        <div class="speedrow">
+          <input type="range" id="ef" min="20" max="100" step="1" value="75">
+          <div class="speedval"><span id="efN">75</span><small> %</small></div>
+        </div>
+        <div class="row2">
+          <div>
+            <label class="fld">Min / hora <span class="hint">min productivos</span></label>
+            <input type="number" id="minHora" value="60" min="1" max="60" step="1">
+          </div>
+          <div>
+            <label class="fld">Horas / día</label>
+            <input type="number" id="hd" value="23" min="1" max="24" step="0.5">
+          </div>
+        </div>
+        <div class="row2" style="margin-top:0">
+          <div>
+            <label class="fld">Días / semana</label>
+            <input type="number" id="diasSem" value="6" min="1" max="7" step="1">
+          </div>
+          <div>
+            <label class="fld">Días / mes <span class="hint">auto</span></label>
+            <input type="number" id="dias" value="26" readonly style="background:var(--chip);color:var(--ink2);font-weight:800">
+          </div>
+        </div>
+        <p class="hint" id="diasMesNota" style="margin-top:8px"></p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="panel-h"><span class="n">3</span> Conversión m² <span class="tag" id="convTag">de tus datos</span></div>
+      <div class="panel-b">
+        <p class="hint" style="margin-bottom:10px">Factor m²/ml (Total M2 ÷ Metros Lineales) de cada máquina, propio del grupo activo. Editable.</p>
+        <div id="convFields"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="panel-h"><span class="n">4</span> Precio por m² <span class="tag" id="priceTag">editable</span></div>
+      <div class="panel-b">
+        <p class="hint" style="margin-bottom:8px">Cuánto facturas por cada m² en cada familia del grupo. Precargado con tu histórico.</p>
+        <div id="priceFields"></div>
+        <button class="save" id="resetPrice" style="background:var(--card);color:var(--ink2);margin-top:10px">↺ Restaurar valores históricos</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px">
+      <div class="panel-h"><span class="n">5</span> Mis simulaciones</div>
+      <div class="panel-b">
+        <button class="save" id="saveBtn">＋ Guardar este escenario</button>
+        <div class="savedlist" id="savedList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULTADOS ===== -->
+  <div>
+    <div class="kpis">
+      <div class="kpi ml">
+        <div class="lab">Metros lineales · base</div>
+        <div class="big" id="k_mlb">—</div>
+        <div class="base" id="k_mlb_sub"></div>
+      </div>
+      <div class="kpi ml alt">
+        <div class="lab">Metros lineales · nuevo</div>
+        <div class="big" id="k_mln">—</div>
+        <div class="delta up" id="k_mld"></div>
+      </div>
+      <div class="kpi">
+        <div class="lab">m² · nuevo escenario</div>
+        <div class="big" id="k_m2n">—</div>
+        <div class="delta up" id="k_m2d"></div>
+      </div>
+      <div class="kpi alt">
+        <div class="lab">Facturación · nuevo</div>
+        <div class="big" id="k_fn">—</div>
+        <div class="delta up" id="k_fd"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button data-tab="maq" class="on">Por máquina</button>
+      <button data-tab="fam">Por familia</button>
+      <button data-tab="ej">Tu ejemplo</button>
+    </div>
+
+    <div class="tabpanel" id="tab-maq">
+      <table>
+        <thead><tr><th>Máquina</th><th>Vel. base→nueva</th><th>ML base</th><th>ML nuevo</th><th>m²/ml</th><th>m² nuevo</th><th>Fact. nueva</th><th>Δ Fact.</th></tr></thead>
+        <tbody id="maqBody"></tbody>
+        <tbody id="maqTot"></tbody>
+      </table>
+      <div class="note" id="maqNote"></div>
+    </div>
+
+    <div class="tabpanel" id="tab-fam" style="display:none">
+      <p class="hint" style="margin-bottom:12px">El total de metros lineales nuevos se reparte entre las familias del grupo activo según su mezcla histórica. Cada familia usa su propio m²/ml y precio/m².</p>
+      <table>
+        <thead><tr><th>Familia</th><th>Mezcla ML</th><th>m²/ml</th><th>$/m²</th><th>ML nuevo</th><th>m² nuevo</th><th>Fact. nueva</th></tr></thead>
+        <tbody id="famBody"></tbody>
+        <tbody id="famTot"></tbody>
+      </table>
+    </div>
+
+    <div class="tabpanel" id="tab-ej" style="display:none">
+      <p class="hint" style="margin-bottom:14px">Tu caso recalculado. Parte de unos metros lineales y una facturación conocidos, y mira el efecto de cambiar la velocidad. El factor de cambio se toma del promedio de velocidades base→nueva de las máquinas seleccionadas.</p>
+      <div class="row2" style="gap:14px;margin-bottom:8px">
+        <div>
+          <label class="fld">Metros lineales de referencia</label>
+          <input type="number" id="ejML" value="8000" step="500">
+        </div>
+        <div>
+          <label class="fld">m² equivalentes <span class="hint">(auto)</span></label>
+          <input type="number" id="ejM2" value="2000" step="100">
+        </div>
+      </div>
+      <label class="fld">Facturación de esos m² ($)</label>
+      <input type="number" id="ejFac" value="20000000" step="1000000" style="margin-bottom:6px">
+      <div id="ejOut" style="margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  Simulador interno Coditeq · Datos base: M2 2025/2026 (col. Metros Lineales, Ancho, Total M2) y Facturación Etiquetas ·
+  Cadena de cálculo: <b>velocidad por máquina → metros lineales → m² → facturación</b>, con factor m²/ml y precio/m² propios de cada grupo de familias.
+</div>
+</div>
+<script>
+const APPDATA = {"grupos": {"2025": {"impresos": {"mix": {"Impreso": 0.823, "Fondos": 0.086, "Impreso Simple": 0.0909}, "m2_por_ml": 0.2445, "fact_por_m2": 7846.93, "ml": 8069000, "m2": 1973057.0, "facturacion": 15482445024.0}, "blancos": {"mix": {"Blanco": 0.9943, "Blanco Zebra": 0.0057}, "m2_por_ml": 0.2525, "fact_por_m2": 6318.06, "ml": 4358278, "m2": 1100290.0, "facturacion": 6951696934.0}}, "2026": {"impresos": {"mix": {"Impreso": 0.8077, "Fondos": 0.1009, "Impreso Simple": 0.0914}, "m2_por_ml": 0.2424, "fact_por_m2": 4949.63, "ml": 5899462, "m2": 1430300.0, "facturacion": 7079452149.0}, "blancos": {"mix": {"Blanco": 0.9975, "Blanco Zebra": 0.0025}, "m2_por_ml": 0.2506, "fact_por_m2": 4144.53, "ml": 3374907, "m2": 845752.0, "facturacion": 3505240425.0}}}, "maquinas": {"Nilpeter 1": {"velocidad": 35, "sin_hist": false, "m2ml": {"2025": {"impresos": 0.242, "blancos": 0.1938}, "2026": {"impresos": 0.2311, "blancos": 0.2495}}}, "Nilpeter 2": {"velocidad": 40, "sin_hist": false, "m2ml": {"2025": {"impresos": 0.2556, "blancos": 0.2525}, "2026": {"impresos": 0.2596, "blancos": 0.2506}}}, "Spande": {"velocidad": 45, "sin_hist": true, "m2ml": {"2025": {"impresos": 0.2445, "blancos": 0.2525}, "2026": {"impresos": 0.2424, "blancos": 0.2506}}}, "Kromia": {"velocidad": 30, "sin_hist": false, "m2ml": {"2025": {"impresos": 0.2216, "blancos": 0.2186}, "2026": {"impresos": 0.2244, "blancos": 0.2123}}}}, "precio_familia": {"2025": {"Impreso": 8561.28, "Fondos": 6073.43, "Impreso Simple": 2847.24, "Blanco": 6336.26, "Blanco Zebra": 3546.91}, "2026": {"Impreso": 5369.93, "Fondos": 4480.73, "Impreso Simple": 1427.03, "Blanco": 4145.21, "Blanco Zebra": 3819.25}}, "m2ml_familia": {"2025": {"Impreso": 0.2461, "Fondos": 0.2345, "Impreso Simple": 0.2396, "Blanco": 0.2522, "Blanco Zebra": 0.2892}, "2026": {"Impreso": 0.2455, "Fondos": 0.2348, "Impreso Simple": 0.2243, "Blanco": 0.2507, "Blanco Zebra": 0.2086}}, "global": {}, "maqset": {"impresos": ["Nilpeter 1", "Nilpeter 2", "Spande", "Kromia"], "blancos": ["Troqueladora Rotativa 1", "Troqueladora Rotativa 2", "Troqueladora Rotativa 3", "Troqueladora Automática", "Troqueladora Plana"]}, "maquinas_blancos": {"Troqueladora Rotativa 1": {"velocidad": 120, "m2ml": 0.2611, "sin_hist": false}, "Troqueladora Rotativa 2": {"velocidad": 120, "m2ml": 0.2611, "sin_hist": true}, "Troqueladora Rotativa 3": {"velocidad": 120, "m2ml": 0.2611, "sin_hist": true}, "Troqueladora Automática": {"velocidad": 90, "m2ml": 0.2611, "sin_hist": true}, "Troqueladora Plana": {"velocidad": 40, "m2ml": 0.1998, "sin_hist": false}}};
+
+const GRUPOS={impresos:['Impreso','Fondos','Impreso Simple'], blancos:['Blanco','Blanco Zebra']};
+const MAQSET={
+  impresos:['Nilpeter 1','Nilpeter 2','Spande','Kromia'],
+  blancos:['Troqueladora Rotativa 1','Troqueladora Rotativa 2','Troqueladora Rotativa 3','Troqueladora Automática','Troqueladora Plana']
+};
+const maqs=()=>MAQSET[GROUP];                 // máquinas del grupo activo
+function maqInfo(m){                            // datos de una máquina en el grupo activo
+  if(GROUP==='blancos'){
+    const b=APPDATA.maquinas_blancos[m];
+    return {velocidad:b.velocidad, m2ml:b.m2ml, sin_hist:b.sin_hist};
+  }
+  const mm=APPDATA.maquinas[m];
+  return {velocidad:mm.velocidad, m2ml:mm.m2ml[YEAR][GROUP], sin_hist:mm.sin_hist};
+}
+let YEAR='2026';
+let GROUP='impresos';
+let prices={};   // precio/m² por familia (editable) del grupo activo
+let conv={};     // m²/ml por máquina (editable) del grupo activo
+let mspeed={};   // {maq:{on,vB,vN}}
+let saved=[];
+
+const fmtMoney=v=>'$'+Math.round(v).toLocaleString('es-CO');
+const fmtN=v=>Math.round(v).toLocaleString('es-CO');
+const fmtPct=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
+const $=id=>document.getElementById(id);
+const curFams=()=>GRUPOS[GROUP];
+
+// -------- defaults dependientes de grupo/año --------
+function defaultPrices(){
+  const p={}; curFams().forEach(f=>{ p[f]=Math.round(APPDATA.precio_familia[YEAR][f]||0); }); return p;
+}
+const M2ML_BASE = 0.237;   // factor m²/ml histórico por defecto (editable por máquina)
+function defaultConv(){
+  const c={}; maqs().forEach(m=>{ c[m]=M2ML_BASE; }); return c;
+}
+function defaultSpeeds(){
+  const s={}; maqs().forEach(m=>{
+    const base=maqInfo(m).velocidad;
+    s[m]={on:true, vB:base, vN:Math.round(base*1.4)};
+  }); return s;
+}
+
+// -------- builders de UI --------
+function buildMaqSpeed(){
+  const cont=$('maqspeed'); cont.innerHTML='';
+  maqs().forEach(m=>{
+    const sinH=maqInfo(m).sin_hist;
+    const s=mspeed[m];
+    const row=document.createElement('div');
+    row.className='mrow'+(s.on?'':' off');
+    row.innerHTML=`
+      <div class="mhead">
+        <input type="checkbox" data-maq="${m}" ${s.on?'checked':''}>
+        <span class="mname">${m}</span>${sinH?'<span class="tag">sin hist.</span>':''}
+      </div>
+      <div class="speeds">
+        <div class="sp"><label>Vel. base (m/m)</label><input type="number" data-sp="vB" data-maq="${m}" value="${s.vB}" min="5" max="400" step="1"></div>
+        <div class="sp"><label>Vel. nueva (m/m)</label><input type="number" class="vn" data-sp="vN" data-maq="${m}" value="${s.vN}" min="5" max="400" step="1"></div>
+      </div>`;
+    cont.appendChild(row);
+  });
+  cont.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.addEventListener('change',()=>{
+    mspeed[cb.dataset.maq].on=cb.checked;
+    cb.closest('.mrow').classList.toggle('off',!cb.checked);
+    render();
+  }));
+  cont.querySelectorAll('input[type=number]').forEach(inp=>inp.addEventListener('input',()=>{
+    mspeed[inp.dataset.maq][inp.dataset.sp]=+inp.value||0; render();
+  }));
+}
+function buildPriceFields(){
+  const cont=$('priceFields'); cont.innerHTML='';
+  curFams().forEach(f=>{
+    const row=document.createElement('div');
+    row.innerHTML=`<label class="fld" style="margin-top:10px">${f}</label>
+      <input type="number" data-fam="${f}" value="${prices[f]}" step="50" style="font-size:14px">`;
+    cont.appendChild(row);
+  });
+  cont.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{prices[inp.dataset.fam]=+inp.value||0;render();}));
+}
+function buildConvFields(){
+  const cont=$('convFields'); cont.innerHTML='';
+  maqs().forEach(m=>{
+    const sinH=maqInfo(m).sin_hist;
+    const row=document.createElement('div');
+    row.innerHTML=`<label class="fld" style="margin-top:10px">${m} ${sinH?'<span class="tag">sin histórico</span>':''}</label>
+      <input type="number" data-maq="${m}" value="${conv[m]}" step="0.001" style="font-size:14px">`;
+    cont.appendChild(row);
+  });
+  cont.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{conv[inp.dataset.maq]=+inp.value||0;render();}));
+}
+
+// -------- mezcla de familias del grupo --------
+function famMix(){ return APPDATA.grupos[YEAR][GROUP].mix; }
+
+const SEM_POR_MES = 365.25/12/7;  // ≈4.348 semanas por mes
+function mlAtSpeed(vel,ef,hd,dias,minHora){ return vel*minHora*hd*dias*(ef/100); }
+
+function params(){
+  const ef=+$('ef').value, hd=+$('hd').value;
+  const minHora=+$('minHora').value||60;
+  const diasSem=+$('diasSem').value||0;
+  const dias=+(diasSem*SEM_POR_MES).toFixed(1);   // días/mes calculado
+  // reflejar el cálculo en el campo y la nota
+  $('dias').value=dias;
+  $('diasMesNota').innerHTML=`<b>${diasSem} días/sem × ${SEM_POR_MES.toFixed(2)} sem/mes = ${dias} días/mes.</b> Se usa este valor para la simulación mensual.`;
+  const M=maqs();
+  const sel=M.filter(m=>mspeed[m].on);
+  return {ef,hd,dias,minHora,diasSem,sel,isAll:sel.length===M.length};
+}
+
+function blendedPrice(){
+  const mix=famMix(); let bp=0;
+  curFams().forEach(f=> bp+= (mix[f]||0)*(prices[f]||0)); return bp;
+}
+
+function render(){
+  const p=params();
+  $('efN').textContent=p.ef;
+  $('priceTag').textContent='base '+YEAR; $('convTag').textContent=GROUP+' '+YEAR;
+  $('scopewarn').style.display=p.sel.length?'none':'block';
+
+  const bp=blendedPrice();
+
+  // filas por máquina, cada una con su velocidad
+  const rows=maqs().map(m=>{
+    const s=mspeed[m], cm=conv[m]||0.2465;
+    const mlB=mlAtSpeed(s.vB,p.ef,p.hd,p.dias,p.minHora);
+    const mlN=mlAtSpeed(s.vN,p.ef,p.hd,p.dias,p.minHora);
+    return {m, vB:s.vB, vN:s.vN, cm, mlB, mlN, m2B:mlB*cm, m2N:mlN*cm, on:s.on};
+  });
+  const inScope=rows.filter(r=>r.on);
+
+  let TmlB=0,TmlN=0,Tm2B=0,Tm2N=0;
+  inScope.forEach(r=>{TmlB+=r.mlB;TmlN+=r.mlN;Tm2B+=r.m2B;Tm2N+=r.m2N;});
+  const fB=Tm2B*bp, fN=Tm2N*bp;
+  const pctML= TmlB? (TmlN-TmlB)/TmlB*100:0;
+  const pctF = fB? (fN-fB)/fB*100:0;
+
+  $('k_mlb').textContent=fmtN(TmlB);
+  $('k_mlb_sub').textContent=`${p.sel.length} máq. · ${p.minHora}min/h × ${p.hd}h × ${p.dias}d · ef ${p.ef}%`;
+  $('k_mln').textContent=fmtN(TmlN);
+  $('k_mld').className='delta '+(TmlN>=TmlB?'up':'down');
+  $('k_mld').textContent=`${TmlN>=TmlB?'▲':'▼'} ${fmtN(Math.abs(TmlN-TmlB))} ml (${fmtPct(pctML)})`;
+  $('k_m2n').textContent=fmtN(Tm2N);
+  $('k_m2d').className='delta '+(Tm2N>=Tm2B?'up':'down');
+  $('k_m2d').textContent=`${Tm2N>=Tm2B?'▲':'▼'} ${fmtN(Math.abs(Tm2N-Tm2B))} m² (${fmtPct(pctML)})`;
+  $('k_fn').textContent=fmtMoney(fN);
+  $('k_fd').className='delta '+(fN>=fB?'up':'down');
+  $('k_fd').textContent=`${fN>=fB?'▲':'▼'} ${fmtMoney(Math.abs(fN-fB))} (${fmtPct(pctF)})`;
+
+  // tabla por máquina
+  const tb=$('maqBody'); tb.innerHTML='';
+  const maxN=Math.max(...rows.map(r=>r.m2N),1);
+  rows.forEach(r=>{
+    const fac=r.m2N*bp, facB=r.m2B*bp;
+    const sinH=maqInfo(r.m).sin_hist;
+    const tr=document.createElement('tr'); if(!r.on)tr.style.opacity='.35';
+    tr.innerHTML=`<td class="mch">${r.m}${sinH?' <span class="tag">sin hist.</span>':''}</td>
+      <td>${r.vB} → <b style="color:var(--accent)">${r.vN}</b></td>
+      <td>${fmtN(r.mlB)}</td><td>${fmtN(r.mlN)}</td>
+      <td>${r.cm.toFixed(3)}</td>
+      <td class="barcell">${fmtN(r.m2N)}<div class="bar" style="width:${r.m2N/maxN*100}%"></div></td>
+      <td>${fmtMoney(fac)}</td><td class="pos">+${fmtMoney(fac-facB)}</td>`;
+    tb.appendChild(tr);
+  });
+  const tot=$('maqTot'); tot.innerHTML='';
+  const nTot=maqs().length;
+  const label=p.isAll?('TOTAL ('+nTot+')'):(p.sel.length?'SELECCIÓN ('+p.sel.length+')':'SIN SELECCIÓN');
+  const trt=document.createElement('tr'); trt.className='tot';
+  trt.innerHTML=`<td>${label}</td><td>—</td><td>${fmtN(TmlB)}</td><td>${fmtN(TmlN)}</td><td>—</td>
+    <td>${fmtN(Tm2N)}</td><td>${fmtMoney(fN)}</td><td class="pos">+${fmtMoney(fN-fB)}</td>`;
+  tot.appendChild(trt);
+  const selTxt=p.isAll?('las '+nTot+' máquinas'):(p.sel.length?p.sel.join(' + '):'ninguna máquina');
+  $('maqNote').innerHTML=`<b>Grupo ${GROUP==='impresos'?'Impresos':'Blancos'}</b> · simulando ${selTxt}. Cada máquina usa su velocidad base→nueva. <b>ml = vel × ${p.minHora} min/h × ${p.hd} h × ${p.dias} d × ${p.ef}%</b>; <b>m² = ml × (m²/ml)</b> del grupo; <b>facturación = m² × precio/m²</b>.`;
+
+  renderFam(TmlN, bp);
+  renderEjemplo(rows, bp);
+}
+
+function renderFam(TmlNScope, bp){
+  const mix=famMix();
+  const tb=$('famBody'); tb.innerHTML=''; let TF=0,TM=0,TML=0;
+  curFams().forEach(f=>{
+    const share=mix[f]||0;
+    const ml=TmlNScope*share;
+    const cm=M2ML_BASE;
+    const m2=ml*cm; const pr=prices[f]||0; const fac=m2*pr;
+    TF+=fac;TM+=m2;TML+=ml;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mch">${f}</td><td>${(share*100).toFixed(1)}%</td>
+      <td>${cm.toFixed(3)}</td><td>${fmtMoney(pr)}</td>
+      <td>${fmtN(ml)}</td><td>${fmtN(m2)}</td><td>${fmtMoney(fac)}</td>`;
+    tb.appendChild(tr);
+  });
+  const tot=$('famTot'); tot.innerHTML='';
+  const trt=document.createElement('tr'); trt.className='tot';
+  trt.innerHTML=`<td>TOTAL ${GROUP==='impresos'?'IMPRESOS':'BLANCOS'}</td><td>100%</td>
+    <td>${TML?(TM/TML).toFixed(3):'—'}</td><td>${fmtMoney(TM?TF/TM:0)}</td>
+    <td>${fmtN(TML)}</td><td>${fmtN(TM)}</td><td>${fmtMoney(TF)}</td>`;
+  tot.appendChild(trt);
+}
+
+function renderEjemplo(rows, bp){
+  const p=params();
+  const inScope=rows.filter(r=>r.on);
+  // factor promedio vN/vB de las máquinas seleccionadas (ponderado por ml base)
+  let wB=0,wN=0;
+  inScope.forEach(r=>{ wB+=r.mlB; wN+=r.mlN; });
+  const factor= wB? wN/wB : 1;
+  // m2/ml promedio ponderado del grupo (seleccionadas)
+  let cm = inScope.length? inScope.reduce((a,r)=>a+r.cm,0)/inScope.length : APPDATA.grupos[YEAR][GROUP].m2_por_ml;
+
+  const mlRef=+$('ejML').value||0;
+  const facref=+$('ejFac').value||0;
+  const m2ref=mlRef*cm; $('ejM2').value=Math.round(m2ref);
+  const mlNew=mlRef*factor, m2New=m2ref*factor, facNew=facref*factor;
+  const ppm2=m2ref?facref/m2ref:0, ppml=mlRef?facref/mlRef:0;
+
+  $('ejOut').innerHTML=`
+    <div class="scn" style="margin-bottom:14px">
+      <div class="box"><div class="lab">Hoy (base)</div><div class="v">${fmtN(mlRef)} ml</div></div>
+      <div class="arrow">→</div>
+      <div class="box b"><div class="lab">Velocidad nueva</div><div class="v">${fmtN(mlNew)} ml</div></div>
+      <div class="arrow">=</div>
+      <div class="box"><div class="lab">Factor</div><div class="v">${factor.toFixed(2)}×</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Concepto</th><th>Base</th><th>Nuevo</th><th>Diferencia</th></tr></thead>
+      <tbody>
+        <tr><td class="mch">Metros lineales</td><td>${fmtN(mlRef)}</td><td>${fmtN(mlNew)}</td><td class="pos">+${fmtN(mlNew-mlRef)} (${fmtPct((factor-1)*100)})</td></tr>
+        <tr><td class="mch">Metros cuadrados</td><td>${fmtN(m2ref)}</td><td>${fmtN(m2New)}</td><td class="pos">+${fmtN(m2New-m2ref)} (${fmtPct((factor-1)*100)})</td></tr>
+        <tr><td class="mch">Facturación</td><td>${fmtMoney(facref)}</td><td>${fmtMoney(facNew)}</td><td class="pos">+${fmtMoney(facNew-facref)} (${fmtPct((factor-1)*100)})</td></tr>
+        <tr><td class="mch">$ / metro lineal</td><td>${fmtMoney(ppml)}</td><td>${fmtMoney(ppml)}</td><td>igual</td></tr>
+        <tr><td class="mch">$ / m²</td><td>${fmtMoney(ppm2)}</td><td>${fmtMoney(ppm2)}</td><td>igual</td></tr>
+      </tbody>
+    </table>
+    <div class="note">Grupo <b>${GROUP==='impresos'?'Impresos':'Blancos'}</b>, factor m²/ml = <b>${cm.toFixed(3)}</b>. Las máquinas seleccionadas pasan de un total base a nuevo equivalente a un factor <b>${factor.toFixed(2)}×</b>. Tus ${fmtN(mlRef)} ml (${fmtN(m2ref)} m²) suben a <b>${fmtN(mlNew)} ml = ${fmtN(m2New)} m²</b>, y ${fmtMoney(facref)} → <b>${fmtMoney(facNew)}</b> en el mismo tiempo.</div>`;
+}
+
+function renderSaved(){
+  const c=$('savedList'); c.innerHTML='';
+  if(!saved.length){ c.innerHTML='<p class="hint">Aún no has guardado escenarios.</p>'; return; }
+  saved.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='item';
+    d.innerHTML=`<span>${s.grupo} · ${s.scopeLabel} · ef ${s.ef}%<br><b>${fmtN(s.mlN)} ml</b> · <b>${fmtN(s.m2N)} m²</b> · <b>${fmtMoney(s.fn)}</b></span>
+      <button class="x" data-i="${i}">×</button>`;
+    c.appendChild(d);
+  });
+  c.querySelectorAll('.x').forEach(b=>b.addEventListener('click',()=>{saved.splice(+b.dataset.i,1);renderSaved();}));
+}
+
+// mspeed acumula TODAS las máquinas (de ambos grupos); nunca se borra al cambiar de grupo
+function rebuildSpeeds(){
+  const def=defaultSpeeds();
+  maqs().forEach(m=>{ if(!mspeed[m]) mspeed[m]=def[m]; });
+}
+
+// -------- listeners --------
+['ef','hd','minHora','diasSem','ejML','ejFac'].forEach(id=>$(id).addEventListener('input',render));
+$('grouptabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  $('grouptabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); GROUP=b.dataset.g;
+  rebuildSpeeds();
+  prices=defaultPrices(); conv=defaultConv();
+  buildMaqSpeed(); buildPriceFields(); buildConvFields(); render();
+}));
+$('yearpick').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  $('yearpick').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); YEAR=b.dataset.y;
+  prices=defaultPrices(); conv=defaultConv();
+  buildPriceFields(); buildConvFields(); render();
+}));
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  ['maq','fam','ej'].forEach(t=>$('tab-'+t).style.display=(t===b.dataset.tab?'block':'none'));
+}));
+$('qAll').addEventListener('click',()=>{maqs().forEach(m=>mspeed[m].on=true);buildMaqSpeed();render();});
+$('qNone').addEventListener('click',()=>{maqs().forEach(m=>mspeed[m].on=false);buildMaqSpeed();render();});
+$('resetPrice').addEventListener('click',()=>{prices=defaultPrices();conv=defaultConv();buildPriceFields();buildConvFields();render();});
+$('saveBtn').addEventListener('click',()=>{
+  const p=params(); if(!p.sel.length)return;
+  const bp=blendedPrice();
+  let mlN=0,m2N=0;
+  p.sel.forEach(m=>{
+    const ml=mlAtSpeed(mspeed[m].vN,p.ef,p.hd,p.dias,p.minHora);
+    mlN+=ml; m2N+=ml*(conv[m]||0.2465);
+  });
+  const scopeLabel=p.isAll?('Planta ('+maqs().length+')'):p.sel.join(' + ');
+  saved.unshift({grupo:GROUP==='impresos'?'Impresos':'Blancos',scopeLabel,ef:p.ef,mlN,m2N,fn:m2N*bp});
+  if(saved.length>6)saved.pop(); renderSaved();
+});
+
+// -------- init --------
+mspeed={};
+['impresos','blancos'].forEach(g=>{
+  MAQSET[g].forEach(m=>{
+    const base = g==='blancos'? APPDATA.maquinas_blancos[m].velocidad : APPDATA.maquinas[m].velocidad;
+    mspeed[m]={on:true, vB:base, vN:Math.round(base*1.4)};
+  });
+});
+prices=defaultPrices(); conv=defaultConv();
+buildMaqSpeed(); buildPriceFields(); buildConvFields(); renderSaved(); render();
+</script>
+</body>
+</html>
